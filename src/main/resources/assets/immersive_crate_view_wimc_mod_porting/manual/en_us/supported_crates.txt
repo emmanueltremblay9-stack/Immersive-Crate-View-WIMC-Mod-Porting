@@ -6,5 +6,8 @@ If a crate is empty, malformed, or has not generated loot yet, the tooltip repor
 <&reinforced_crate_recipe>Reinforced Storage Crates use the same preview path and keep their normal explosion-resistant behavior.
 This mod does not change how crates are sealed, placed, broken, or crafted.<br>
 For Immersive Engineering's own crate behavior, see <link;storage_crates;Storage Crates>.<np>
-<&crate_icons>Compatible crate-like items can opt in through the wimc:industrial_crates item tag.
+Engineer's Decor & Controls Reforged Labeled Crates are supported when EDCT is loaded.
+Their carried item data uses the same safe component, block-entity, and capability fallback path when that mod is installed.<br>
+The label editor and placed-block behavior remain EDCT's own systems.<np>
+<&crate_icons>Compatible crate-like items can opt in through the immersive_crate_view_wimc_mod_porting:industrial_crates item tag.
 Only inventory preview detection is added; tagged items should already store their contents on the item stack through modern components, block entity data, or an item capability.

@@ -18,6 +18,9 @@ public record CratePreviewContents(
     public static final int DEFAULT_CRATE_SLOTS = 27;
     public static final int SLOT_SIZE = 18;
 
+    record CompactPreviewPlan(int visibleSlots, int columns, int rows, int hiddenSlots) {
+    }
+
     public static CratePreviewContents create(
             List<ItemStack> sourceSlots,
             int expectedSlots,
@@ -30,14 +33,13 @@ public record CratePreviewContents(
         int safeRows = clamp(maxRows, 1, 12);
         int slotCapacity = safeColumns * safeRows;
         int totalSlots = Math.max(0, Math.max(expectedSlots, sourceSlots.size()));
+
+        if (!showEmptySlots) {
+            return createCompact(sourceSlots, totalSlots, slotCapacity, safeColumns, status);
+        }
+
         int clampedSlots = Math.min(totalSlots, slotCapacity);
         int visibleSlots = clampedSlots;
-
-        if (!showEmptySlots && status == CratePreviewStatus.EMPTY) {
-            visibleSlots = 0;
-        } else if (!showEmptySlots) {
-            visibleSlots = Math.min(visibleSlots, lastNonEmptySlot(sourceSlots, visibleSlots) + 1);
-        }
 
         int rows = visibleSlots == 0 ? 0 : (int)Math.ceil(visibleSlots / (double)safeColumns);
         List<ItemStack> visible = new ArrayList<>(visibleSlots);
@@ -63,17 +65,6 @@ public record CratePreviewContents(
         return false;
     }
 
-    private static int lastNonEmptySlot(List<ItemStack> slots, int visibleLimit) {
-        int last = -1;
-        int limit = Math.min(slots.size(), visibleLimit);
-        for (int slot = 0; slot < limit; slot++) {
-            if (!slots.get(slot).isEmpty()) {
-                last = slot;
-            }
-        }
-        return last;
-    }
-
     private static int hiddenSlots(
             List<ItemStack> sourceSlots,
             int totalSlots,
@@ -97,6 +88,59 @@ public record CratePreviewContents(
             }
         }
         return false;
+    }
+
+    private static CratePreviewContents createCompact(
+            List<ItemStack> sourceSlots,
+            int totalSlots,
+            int slotCapacity,
+            int safeColumns,
+            CratePreviewStatus status
+    ) {
+        if (status == CratePreviewStatus.EMPTY) {
+            return new CratePreviewContents(List.of(), safeColumns, 0, totalSlots, 0, false, status);
+        }
+
+        List<ItemStack> occupied = new ArrayList<>();
+        for (ItemStack stack : sourceSlots) {
+            if (!stack.isEmpty()) {
+                occupied.add(stack.copy());
+            }
+        }
+
+        CompactPreviewPlan plan = compactPreviewPlan(occupied.size(), slotCapacity, safeColumns, status);
+        List<ItemStack> visible = new ArrayList<>(plan.visibleSlots());
+        for (int slot = 0; slot < plan.visibleSlots(); slot++) {
+            visible.add(occupied.get(slot).copy());
+        }
+
+        return new CratePreviewContents(
+                List.copyOf(visible),
+                plan.columns(),
+                plan.rows(),
+                totalSlots,
+                plan.hiddenSlots(),
+                false,
+                status
+        );
+    }
+
+    static CompactPreviewPlan compactPreviewPlan(
+            int occupiedSlots,
+            int slotCapacity,
+            int safeColumns,
+            CratePreviewStatus status
+    ) {
+        if (status == CratePreviewStatus.EMPTY) {
+            return new CompactPreviewPlan(0, safeColumns, 0, 0);
+        }
+
+        int safeOccupiedSlots = Math.max(0, occupiedSlots);
+        int visibleSlots = Math.min(safeOccupiedSlots, Math.max(0, slotCapacity));
+        int columns = visibleSlots == 0 ? safeColumns : Math.min(Math.max(1, safeColumns), visibleSlots);
+        int rows = visibleSlots == 0 ? 0 : (int)Math.ceil(visibleSlots / (double)columns);
+        int hiddenSlots = Math.max(0, safeOccupiedSlots - visibleSlots);
+        return new CompactPreviewPlan(visibleSlots, columns, rows, hiddenSlots);
     }
 
     private static int clamp(int value, int min, int max) {

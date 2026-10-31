@@ -15,6 +15,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class ManualResourcesQa {
+    private static final String MOD_ID = "immersive_crate_view_wimc_mod_porting";
+    private static final String EDCT_MOD_ID = "immersive_engineer_decor_controls_tool_reforged";
+    private static final String LEGACY_EDCT_MOD_ID = "engineers_decor_reforged";
+    private static final String EDCT_LABELED_CRATE_ID = EDCT_MOD_ID + ":labeled_crate";
+    private static final String LEGACY_EDCT_LABELED_CRATE_ID = LEGACY_EDCT_MOD_ID + ":labeled_crate";
+    private static final String IE_MOD_ID = "immersiveengineering";
     private static final Set<String> WIMC_ENTRIES = Set.of(
             "crate_preview_overview",
             "supported_crates",
@@ -26,13 +32,14 @@ public final class ManualResourcesQa {
             "preview_settings", Set.of("settings_icon")
     );
     private static final Set<String> ALLOWED_IE_LINKS = Set.of("storage_crates");
-    private static final Set<String> ALLOWED_IE_RECIPES = Set.of(
+    private static final Set<String> ALLOWED_MANUAL_RECIPES = Set.of(
             "immersiveengineering:crafting/crate",
             "immersiveengineering:crafting/reinforced_crate"
     );
     private static final Set<String> ALLOWED_SPECIAL_TYPES = Set.of("crafting", "item_display");
     private static final Pattern ANCHOR_PATTERN = Pattern.compile("<&([A-Za-z0-9_:\\-./]+)>");
     private static final Pattern LINK_PATTERN = Pattern.compile("<link;([^;>]+);([^;>]+)(?:;([^>]+))?>");
+    private static final Pattern LOGO_FILE_PATTERN = Pattern.compile("(?m)^\\s*logoFile\\s*=\\s*\"([^\"]+)\"");
 
     private ManualResourcesQa() {
     }
@@ -41,23 +48,74 @@ public final class ManualResourcesQa {
         Path root = args.length > 0 ? Path.of(args[0]) : Path.of("").toAbsolutePath();
         Path resources = root.resolve("src/main/resources");
 
+        validateModMetadataTemplate(root, resources);
         validateAutoload(resources);
         validateLocalization(resources);
+        validateIndustrialCrateTag(resources);
         for (String entry : WIMC_ENTRIES) {
             validateEntry(resources, entry);
         }
     }
 
+    private static void validateModMetadataTemplate(Path root, Path resources) throws IOException {
+        Path templatePath = root.resolve("src/main/templates/META-INF/neoforge.mods.toml");
+        require(Files.isRegularFile(templatePath), "missing NeoForge metadata template: " + templatePath);
+
+        String template = Files.readString(templatePath);
+        Matcher matcher = LOGO_FILE_PATTERN.matcher(template);
+        require(matcher.find(), "NeoForge metadata template is missing logoFile");
+
+        String logoFile = matcher.group(1);
+        require(
+                !logoFile.equals("wimc_logo.png"),
+                "metadata logoFile still uses the legacy WIMC filename"
+        );
+        require(
+                Files.isRegularFile(resources.resolve(logoFile)),
+                "metadata logoFile does not exist in main resources: " + logoFile
+        );
+        require(
+                template.contains("modId=\"" + EDCT_MOD_ID + "\""),
+                "NeoForge metadata template is missing the current EDCT optional dependency"
+        );
+        require(
+                template.contains("modId=\"" + LEGACY_EDCT_MOD_ID + "\""),
+                "NeoForge metadata template is missing the legacy EDCT optional dependency"
+        );
+        requireClientOptionalDependency(template, IE_MOD_ID);
+        requireClientOptionalDependency(template, EDCT_MOD_ID);
+        requireClientOptionalDependency(template, LEGACY_EDCT_MOD_ID);
+    }
+
+    private static void requireClientOptionalDependency(String template, String dependencyModId) {
+        String marker = "modId=\"" + dependencyModId + "\"";
+        int markerIndex = template.indexOf(marker);
+        require(markerIndex >= 0, "NeoForge metadata template is missing dependency " + dependencyModId);
+
+        int nextDependencyIndex = template.indexOf("[[dependencies.", markerIndex + marker.length());
+        String dependencyBlock = nextDependencyIndex >= 0
+                ? template.substring(markerIndex, nextDependencyIndex)
+                : template.substring(markerIndex);
+        require(dependencyBlock.contains("type=\"optional\""), dependencyModId + " dependency must be optional");
+        require(dependencyBlock.contains("side=\"CLIENT\""), dependencyModId + " dependency must be client-side only");
+    }
+
     private static void validateAutoload(Path resources) throws IOException {
         JsonObject autoload = readJson(resources.resolve("assets/immersiveengineering/manual/autoload.json"));
         require(autoload.has("autoload_priority"), "manual autoload is missing autoload_priority");
+        require(autoload.get("autoload_priority").getAsInt() >= 2, "manual autoload should load after IE's base manual");
         require(autoload.has("storage_transport"), "manual autoload must attach under IE storage_transport");
         require(autoload.size() == 2, "manual autoload should only define autoload_priority and storage_transport");
 
         JsonObject storage = autoload.getAsJsonObject("storage_transport");
-        require(storage.has("wimc:factory_inventory_inspector"), "manual autoload missing WIMC subcategory");
+        require(storage.has("category_weight"), "storage_transport category stub missing category_weight");
+        require(storage.has("entry_list"), "storage_transport category stub missing entry_list");
+        require(storage.get("category_weight").getAsInt() == 20, "storage_transport category weight should match IE");
+        require(storage.getAsJsonArray("entry_list").isEmpty(), "storage_transport entry_list should not duplicate IE entries");
+        String subcategory = MOD_ID + ":factory_inventory_inspector";
+        require(storage.has(subcategory), "manual autoload missing WIMC subcategory");
 
-        JsonObject category = storage.getAsJsonObject("wimc:factory_inventory_inspector");
+        JsonObject category = storage.getAsJsonObject(subcategory);
         require(category.has("category_weight"), "manual category missing category_weight");
         JsonArray entries = category.getAsJsonArray("entry_list");
         require(entries != null, "manual category missing entry_list");
@@ -69,8 +127,8 @@ public final class ManualResourcesQa {
             require(entry.has("source"), "manual entry list object missing source");
             require(entry.has("weight"), "manual entry list object missing weight");
             String source = entry.get("source").getAsString();
-            require(source.startsWith("wimc:"), "manual entry source must be namespaced to wimc: " + source);
-            String path = source.substring("wimc:".length());
+            require(source.startsWith(MOD_ID + ":"), "manual entry source must be namespaced to " + MOD_ID + ": " + source);
+            String path = source.substring((MOD_ID + ":").length());
             require(WIMC_ENTRIES.contains(path), "unknown WIMC manual entry in autoload: " + source);
             require(seen.add(path), "duplicate WIMC manual entry in autoload: " + source);
         }
@@ -78,16 +136,38 @@ public final class ManualResourcesQa {
     }
 
     private static void validateLocalization(Path resources) throws IOException {
-        JsonObject lang = readJson(resources.resolve("assets/wimc/lang/en_us.json"));
+        JsonObject lang = readJson(resources.resolve("assets/" + MOD_ID + "/lang/en_us.json"));
         require(
-                lang.has("manual.wimc.factory_inventory_inspector"),
-                "missing manual.wimc.factory_inventory_inspector localization"
+                lang.has("manual." + MOD_ID + ".factory_inventory_inspector"),
+                "missing manual." + MOD_ID + ".factory_inventory_inspector localization"
         );
     }
 
+    private static void validateIndustrialCrateTag(Path resources) throws IOException {
+        JsonObject tag = readJson(resources.resolve("data/" + MOD_ID + "/tags/item/industrial_crates.json"));
+        JsonArray values = tag.getAsJsonArray("values");
+        require(values != null && !values.isEmpty(), "industrial crate tag must list supported crate ids");
+
+        boolean hasCurrentEdctCrate = false;
+        boolean hasLegacyEdctCrate = false;
+        for (JsonElement value : values) {
+            String id;
+            if (value.isJsonPrimitive()) {
+                id = value.getAsString();
+            } else {
+                id = requiredString(value.getAsJsonObject(), "id", "industrial crate tag entry");
+            }
+            hasCurrentEdctCrate |= EDCT_LABELED_CRATE_ID.equals(id);
+            hasLegacyEdctCrate |= LEGACY_EDCT_LABELED_CRATE_ID.equals(id);
+        }
+
+        require(hasCurrentEdctCrate, "industrial crate tag is missing current EDCT labeled crate id");
+        require(!hasLegacyEdctCrate, "industrial crate tag still uses legacy EDCT labeled crate id");
+    }
+
     private static void validateEntry(Path resources, String entry) throws IOException {
-        Path jsonPath = resources.resolve("assets/wimc/manual/" + entry + ".json");
-        Path textPath = resources.resolve("assets/wimc/manual/en_us/" + entry + ".txt");
+        Path jsonPath = resources.resolve("assets/" + MOD_ID + "/manual/" + entry + ".json");
+        Path textPath = resources.resolve("assets/" + MOD_ID + "/manual/en_us/" + entry + ".txt");
         JsonObject json = readJson(jsonPath);
         String text = Files.readString(textPath);
 
@@ -95,6 +175,15 @@ public final class ManualResourcesQa {
         validateAnchors(entry, json, text);
         validateLinks(entry, text);
         validateSpecials(entry, json);
+        if ("supported_crates".equals(entry)) {
+            validateEdctCompatibilityIsTextOnly(json, text);
+        }
+    }
+
+    private static void validateEdctCompatibilityIsTextOnly(JsonObject json, String text) {
+        require(!json.toString().contains(EDCT_LABELED_CRATE_ID), "supported crates manual must not resolve EDCT items directly");
+        require(!text.contains("<&edct_labeled_crate_recipe>"), "supported crates manual must not anchor an EDCT recipe");
+        require(text.contains("EDCT is loaded"), "supported crates manual must retain the textual EDCT compatibility note");
     }
 
     private static void validateTextShape(String entry, String text) {
@@ -130,8 +219,8 @@ public final class ManualResourcesQa {
         Matcher matcher = LINK_PATTERN.matcher(text);
         while (matcher.find()) {
             String target = matcher.group(1);
-            if (target.startsWith("wimc:")) {
-                String path = target.substring("wimc:".length());
+            if (target.startsWith(MOD_ID + ":")) {
+                String path = target.substring((MOD_ID + ":").length());
                 require(WIMC_ENTRIES.contains(path), entry + " links to unknown WIMC manual entry " + target);
             } else {
                 require(ALLOWED_IE_LINKS.contains(target), entry + " links to unexpected IE manual entry " + target);
@@ -149,7 +238,7 @@ public final class ManualResourcesQa {
             if ("crafting".equals(type)) {
                 String recipe = requiredString(specialObject, "recipe", entry + " crafting special " + special.getKey());
                 require(recipe.contains(":"), entry + " recipe reference must be namespaced: " + recipe);
-                require(ALLOWED_IE_RECIPES.contains(recipe), entry + " references unexpected IE recipe " + recipe);
+                require(ALLOWED_MANUAL_RECIPES.contains(recipe), entry + " references unexpected manual recipe " + recipe);
             } else if ("item_display".equals(type)) {
                 validateItemDisplay(entry, special.getKey(), specialObject);
             }

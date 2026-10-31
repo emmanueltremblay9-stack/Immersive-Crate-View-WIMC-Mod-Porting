@@ -4,4 +4,4 @@ Look inside before unpacking
 Hover a sealed crate stack to see its stored items, stack counts, and empty slots when the setting is enabled.<br>
 It does not open the crate, request server data, or generate loot-table contents on the client.<np>
 Use this page as a quick check at a workbench, warehouse wall, or storage shelf before placing crates back down.
-For crate support and recipes, see <link;wimc:supported_crates;supported crates>. For display options, see <link;wimc:preview_settings;preview settings>.
+For crate support and recipes, see <link;immersive_crate_view_wimc_mod_porting:supported_crates;supported crates>. For display options, see <link;immersive_crate_view_wimc_mod_porting:preview_settings;preview settings>.

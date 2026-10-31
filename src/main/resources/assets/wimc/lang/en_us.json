@@ -1,7 +1,0 @@
-{
-  "manual.wimc.factory_inventory_inspector": "Factory Inventory Inspector",
-  "wimc.tooltip.crate_preview.shift": "Hold Shift for crate preview",
-  "wimc.tooltip.crate_preview.empty": "Empty crate",
-  "wimc.tooltip.crate_preview.loot": "Loot not generated yet",
-  "wimc.tooltip.crate_preview.truncated": "+%s more slots"
-}

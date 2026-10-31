@@ -3,6 +3,7 @@ package com.emmanueltremblay.wimc.client;
 import com.emmanueltremblay.wimc.WimcClientConfig;
 import com.emmanueltremblay.wimc.crate.CrateInventoryExtractor;
 import com.emmanueltremblay.wimc.crate.CratePreviewContents;
+import com.emmanueltremblay.wimc.crate.CratePreviewDetector;
 import com.emmanueltremblay.wimc.tooltip.CratePreviewTooltipComponent;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.client.Minecraft;
@@ -30,6 +31,15 @@ public final class CratePreviewTooltipEvents {
             return;
         }
 
+        boolean requireShift = WimcClientConfig.requireShiftForPreview();
+        boolean shiftDown = Screen.hasShiftDown();
+        if (!shouldExtractPreview(requireShift, shiftDown)) {
+            if (shouldShowShiftHint(requireShift, shiftDown, CratePreviewDetector.isSupportedCrate(event.getItemStack()))) {
+                event.getTooltipElements().add(Either.left(Component.translatable("immersive_crate_view_wimc_mod_porting.tooltip.crate_preview.shift")));
+            }
+            return;
+        }
+
         int columns = columnsForScreen(event.getScreenWidth());
         Optional<CratePreviewContents> preview = CrateInventoryExtractor.extract(
                 event.getItemStack(),
@@ -39,25 +49,27 @@ public final class CratePreviewTooltipEvents {
                 WimcClientConfig.showEmptySlots()
         );
 
-        if (WimcClientConfig.requireShiftForPreview() && !Screen.hasShiftDown()) {
-            if (preview.isPresent()) {
-                event.getTooltipElements().add(Either.left(Component.translatable("wimc.tooltip.crate_preview.shift")));
-            }
-            return;
-        }
-
         preview.ifPresent(contents -> {
             event.getTooltipElements().add(Either.right(new CratePreviewTooltipComponent(contents)));
             if (event.getMaxWidth() != -1) {
-                event.setMaxWidth(Math.max(event.getMaxWidth(), contents.columns() * CratePreviewContents.SLOT_SIZE));
+                event.setMaxWidth(Math.max(
+                        event.getMaxWidth(),
+                        CratePreviewTooltipLayout.panelWidth(contents.columns())
+                ));
             }
         });
     }
 
+    static boolean shouldExtractPreview(boolean requireShiftForPreview, boolean shiftDown) {
+        return !requireShiftForPreview || shiftDown;
+    }
+
+    static boolean shouldShowShiftHint(boolean requireShiftForPreview, boolean shiftDown, boolean supportedCrate) {
+        return requireShiftForPreview && !shiftDown && supportedCrate;
+    }
+
     private static int columnsForScreen(int screenWidth) {
-        int availableWidth = Math.max(CratePreviewContents.SLOT_SIZE, screenWidth - TOOLTIP_SCREEN_MARGIN);
-        int columns = availableWidth / CratePreviewContents.SLOT_SIZE;
-        return Math.max(1, Math.min(CratePreviewContents.PREFERRED_COLUMNS, columns));
+        return CratePreviewTooltipLayout.columnsForScreenWidth(screenWidth, TOOLTIP_SCREEN_MARGIN);
     }
 
     @Nullable

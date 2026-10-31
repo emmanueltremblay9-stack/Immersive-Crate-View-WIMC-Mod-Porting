@@ -1,19 +1,21 @@
 {
-  "autoload_priority": 0,
+  "autoload_priority": 2,
   "storage_transport": {
-    "wimc:factory_inventory_inspector": {
+    "category_weight": 20,
+    "entry_list": [],
+    "immersive_crate_view_wimc_mod_porting:factory_inventory_inspector": {
       "category_weight": 22,
       "entry_list": [
         {
-          "source": "wimc:crate_preview_overview",
+          "source": "immersive_crate_view_wimc_mod_porting:crate_preview_overview",
           "weight": 0
         },
         {
-          "source": "wimc:supported_crates",
+          "source": "immersive_crate_view_wimc_mod_porting:supported_crates",
           "weight": 1
         },
         {
-          "source": "wimc:preview_settings",
+          "source": "immersive_crate_view_wimc_mod_porting:preview_settings",
           "weight": 2
         }
       ]

@@ -14,7 +14,7 @@ version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = mod_id
+    archivesName = mod_archive_name
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -100,7 +100,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
     inputs.properties replaceProperties
     expand replaceProperties
     from "src/main/templates"
-    into "build/generated/sources/modMetadata"
+    into layout.buildDirectory.dir("generated/sources/modMetadata")
 }
 
 sourceSets.main.resources.srcDir generateModMetadata
@@ -138,9 +138,43 @@ tasks.register('qaManualResources', JavaExec) {
     args project.projectDir.absolutePath
 }
 
+tasks.register('qaTooltipLayout', JavaExec) {
+    group = 'verification'
+    description = 'Validates crate tooltip GUI layout arithmetic.'
+    classpath = sourceSets.qa.runtimeClasspath
+    mainClass = 'com.emmanueltremblay.wimc.client.CratePreviewTooltipLayoutQa'
+}
+
+tasks.register('qaTooltipEvents', JavaExec) {
+    group = 'verification'
+    description = 'Validates crate tooltip event gating behavior.'
+    classpath = sourceSets.qa.runtimeClasspath
+    mainClass = 'com.emmanueltremblay.wimc.client.CratePreviewTooltipEventsQa'
+}
+
+tasks.register('qaInstallScript', JavaExec) {
+    group = 'verification'
+    description = 'Validates the Windows Prism install script safety guards.'
+    classpath = sourceSets.qa.runtimeClasspath
+    mainClass = 'com.emmanueltremblay.wimc.qa.InstallScriptQa'
+    args project.projectDir.absolutePath
+}
+
+tasks.register('qaReleaseDocs', JavaExec) {
+    group = 'verification'
+    description = 'Validates release-facing docs for current namespace and resource references.'
+    classpath = sourceSets.qa.runtimeClasspath
+    mainClass = 'com.emmanueltremblay.wimc.qa.ReleaseDocsQa'
+    args project.projectDir.absolutePath
+}
+
 tasks.named('check').configure {
     dependsOn tasks.named('qaPreviewModel')
     dependsOn tasks.named('qaManualResources')
+    dependsOn tasks.named('qaTooltipLayout')
+    dependsOn tasks.named('qaTooltipEvents')
+    dependsOn tasks.named('qaInstallScript')
+    dependsOn tasks.named('qaReleaseDocs')
 }
 
 idea {

@@ -8,7 +8,7 @@ import net.neoforged.fml.config.ModConfig;
 
 @Mod(Wimc.MOD_ID)
 public final class Wimc {
-    public static final String MOD_ID = "wimc";
+    public static final String MOD_ID = "immersive_crate_view_wimc_mod_porting";
 
     public Wimc(IEventBus modBus, ModContainer modContainer, Dist dist) {
         if (dist == Dist.CLIENT) {

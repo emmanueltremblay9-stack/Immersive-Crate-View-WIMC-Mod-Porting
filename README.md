@@ -1,6 +1,6 @@
 # Engineer's Crate Preview
 
-![Engineer's Crate Preview logo](src/main/resources/wimc_logo.png)
+![Engineer's Crate Preview logo](src/main/resources/immersive_crate_view_wimc_mod_porting_logo.png)
 
 Client-only NeoForge 1.21.1 / Java 21 tooltip previews for Immersive Engineering crates and compatible industrial crate items. The feature is inspired by redcatone's What's In My Crate (WIMC), but implemented with modern NeoForge tooltip component APIs.
 
@@ -8,7 +8,8 @@ Client-only NeoForge 1.21.1 / Java 21 tooltip previews for Immersive Engineering
 
 - Uses `RenderTooltipEvent.GatherComponents`, `TooltipComponent`, `ClientTooltipComponent`, `RegisterClientTooltipComponentFactoriesEvent`, and `GuiGraphics`.
 - Detects Immersive Engineering `crate` and `reinforced_crate` safely when IE is loaded.
-- Supports opt-in industrial crate items through the `wimc:industrial_crates` item tag.
+- Detects Immersive Engineer Decor&Controls&Tool Reforged `immersive_engineer_decor_controls_tool_reforged:labeled_crate` safely when EDCT is loaded.
+- Supports opt-in industrial crate items through the `immersive_crate_view_wimc_mod_porting:industrial_crates` item tag.
 - Reads vanilla `DataComponents.CONTAINER` first, with defensive fallbacks for item capabilities and unresolved loot-table components.
 - Renders a 9-wide grid, stack counts, empty slots when enabled, and row clamping through client config.
 - Keeps all GUI classes behind a client-only entrypoint so dedicated server startup does not load client rendering classes.
@@ -22,7 +23,7 @@ The generated client config exposes:
 - `maxPreviewRows = 6`
 - `showEmptySlots = true`
 - `enableImmersiveEngineeringCrates = true`
-- `enableOwnModCrates = true`
+- `enableOwnModCrates = true` for WIMC-compatible and tagged industrial crate items, including EDCT labeled crates.
 
 ## Attribution
 

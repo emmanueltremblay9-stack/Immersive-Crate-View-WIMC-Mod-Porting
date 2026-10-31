@@ -8,6 +8,10 @@
     {
       "id": "immersiveengineering:reinforced_crate",
       "required": false
+    },
+    {
+      "id": "immersive_engineer_decor_controls_tool_reforged:labeled_crate",
+      "required": false
     }
   ]
 }

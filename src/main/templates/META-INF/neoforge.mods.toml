@@ -8,7 +8,7 @@ version="${mod_version}"
 displayName="${mod_name}"
 authors="${mod_authors}"
 credits="Inspired by What's In My Crate (WIMC) by redcatone."
-logoFile="wimc_logo.png"
+logoFile="immersive_crate_view_wimc_mod_porting_logo.png"
 description='''${mod_description}'''
 
 [[dependencies.${mod_id}]]
@@ -31,4 +31,20 @@ type="optional"
 reason="Enables exact Immersive Engineering crate and reinforced crate detection."
 versionRange="[12.4.0,)"
 ordering="AFTER"
-side="BOTH"
+side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="immersive_engineer_decor_controls_tool_reforged"
+type="optional"
+reason="Enables exact Immersive Engineer Decor&Controls&Tool Reforged labeled crate detection."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="engineers_decor_reforged"
+type="optional"
+reason="Keeps compatibility with legacy Engineer's Decor & Controls Reforged labeled crate jars."
+versionRange="[1.1.0,)"
+ordering="AFTER"
+side="CLIENT"

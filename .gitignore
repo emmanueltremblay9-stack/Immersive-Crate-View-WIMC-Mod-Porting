@@ -1,10 +1,12 @@
 .gradle/
 build/
+build-codex*/
 run/
 run-*/
 out/
 *.class
 *.log
+logs/phase1/
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 *.war
@@ -12,4 +14,7 @@ out/
 *.iml
 .idea/
 .vscode/
+.codex/local.env
+.codegraph/
+.understand-anything/
 src/generated/resources/.cache/

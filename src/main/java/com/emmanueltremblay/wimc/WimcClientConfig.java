@@ -32,7 +32,7 @@ public final class WimcClientConfig {
                 .comment("Enables exact detection for Immersive Engineering crates and reinforced crates.")
                 .define("enableImmersiveEngineeringCrates", true);
         ENABLE_OWN_MOD_CRATES = builder
-                .comment("Enables this mod's crate detector and tag-based industrial crate opt-ins.")
+                .comment("Enables WIMC-compatible crate detectors and tag-based industrial crate opt-ins.")
                 .define("enableOwnModCrates", true);
 
         builder.pop();

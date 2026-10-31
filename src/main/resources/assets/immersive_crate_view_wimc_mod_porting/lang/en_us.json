@@ -1,0 +1,7 @@
+{
+  "manual.immersive_crate_view_wimc_mod_porting.factory_inventory_inspector": "Factory Inventory Inspector",
+  "immersive_crate_view_wimc_mod_porting.tooltip.crate_preview.shift": "Hold Shift for crate preview",
+  "immersive_crate_view_wimc_mod_porting.tooltip.crate_preview.empty": "Empty crate",
+  "immersive_crate_view_wimc_mod_porting.tooltip.crate_preview.loot": "Loot not generated yet",
+  "immersive_crate_view_wimc_mod_porting.tooltip.crate_preview.truncated": "+%s more slots"
+}
